@@ -22,8 +22,8 @@ REGISTER_USER_OP("additive_angular_margin")
     .Input("label")
     .Output("y")
     .Output("sin_theta_data")
-    .Attr("margin", UserOpAttrType::kAtFloat)
-    .Attr("depth", UserOpAttrType::kAtInt64)
+    .Attr<float>("margin")
+    .Attr<int64_t>("depth")
     .SetTensorDescInferFn([](user_op::InferContext* ctx) -> Maybe<void> {
       const user_op::TensorDesc* x = ctx->TensorDesc4ArgNameAndIndex("x", 0);
       const user_op::TensorDesc* label = ctx->TensorDesc4ArgNameAndIndex("label", 0);
@@ -66,8 +66,8 @@ REGISTER_USER_OP("additive_angular_margin_grad")
     .Input("label")
     .Input("sin_theta_data")
     .Output("dx")
-    .Attr("margin", UserOpAttrType::kAtFloat)
-    .Attr("depth", UserOpAttrType::kAtInt64)
+    .Attr<float>("margin")
+    .Attr<int64_t>("depth")
     .SetTensorDescInferFn([](user_op::InferContext* ctx) -> Maybe<void> {
       const user_op::TensorDesc* dy = ctx->TensorDesc4ArgNameAndIndex("dy", 0);
       const user_op::TensorDesc* label = ctx->TensorDesc4ArgNameAndIndex("label", 0);
