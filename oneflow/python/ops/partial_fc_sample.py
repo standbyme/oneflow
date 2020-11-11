@@ -33,7 +33,6 @@ def partial_fc_sample(
     weight: remote_blob_util.BlobDef,
     label: remote_blob_util.BlobDef,
     num_sample: int,
-    indexed_slice_update: False,
     name: Optional[str] = None,
 ) -> remote_blob_util.BlobDef:
 
@@ -45,7 +44,6 @@ def partial_fc_sample(
         .Input("weight", [weight])
         .Input("label", [label])
         .Attr("num_sample", num_sample)
-        .Attr("indexed_slice_update", indexed_slice_update)
         .Output("maped_label")
         .Output("sampled_label")
         .Output("sampled_weight")
