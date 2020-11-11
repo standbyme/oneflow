@@ -38,6 +38,7 @@ def compare_with_np(
         flow.config.gpu_device_num(4)
     func_config = flow.FunctionConfig()
     func_config.default_data_type(flow.float)
+    func_config.indexed_slices_optimizer_conf(dict(include_op_names=dict(op_name=[])))
 
     @flow.global_function(type="train", function_config=func_config)
     def PartialFcJob(
@@ -47,7 +48,7 @@ def compare_with_np(
     ):
         with flow.scope.placement(device_type, "0:0"):
             x = flow.get_variable(
-                "x",
+                "x-weight",
                 shape=(num_classes, 128),
                 dtype=flow.float,
                 initializer=flow.random_uniform_initializer(minval=-10, maxval=10),
@@ -60,7 +61,6 @@ def compare_with_np(
                 weight=x.with_distribute(weight_distribute),
                 label=labels.with_distribute(lebels_distribute),
                 num_sample=num_sample,
-                indexed_slice_update=indexed_slice_update,
             )
         with flow.scope.placement(device_type, "0:0"):
             sampled_weight = flow.identity(sampled_weight)
@@ -84,6 +84,7 @@ def compare_with_np(
     check_point = flow.train.CheckPoint()
     check_point.init()
     weight, maped_label, sampled_label, sampled_weight = PartialFcJob(labels).get()
+    print("sampled_label", sampled_label.numpy())
 
     gpu_num = 4
     device_class_num = num_classes / gpu_num
@@ -101,26 +102,18 @@ def compare_with_np(
         idx_start = int(i * device_num_sample)
         idx_end = int((i + 1) * device_num_sample)
         local_sample_labels = sampled_label[idx_start:idx_end]
-        if indexed_slice_update:
-            global_sample_labels = local_sample_labels
-        else:
-            global_sample_labels = local_sample_labels + i * device_class_num
+        # global_sample_labels = local_sample_labels + i * device_class_num
+        global_sample_labels = local_sample_labels
         global_sample_labels_list.append(global_sample_labels)
 
-        if indexed_slice_update:
-            assert (
-                np.all((local_sample_labels >= lower) & (local_sample_labels < upper))
-                == True
-            )
-        else:
-            assert (
-                np.all(
-                    (local_sample_labels >= 0)
-                    & (local_sample_labels < device_class_num)
-                )
-                == True
-            )
+        assert (
+            np.all((local_sample_labels >= lower) & (local_sample_labels < upper))
+            == True
+        )
         assert len(local_sample_labels) == len(np.unique(local_sample_labels))
+        print("gpu", i, "local_label", local_label[0:20])
+        print("gpu", i, "global_sample_labels", global_sample_labels[0:20])
+
         assert (
             np.array_equal(local_label, global_sample_labels[0 : len(local_label)])
             == True
@@ -137,9 +130,14 @@ def compare_with_np(
     assert np.array_equal(sampled_weight.numpy(), np_sample_weight) == True
 
     sampled_weight_diff = test_global_storage.Get("sampled_weight_diff")
+
     np_weight_diff = np.zeros(weight.shape)
     for i in range(len(global_sample_label)):
         np_weight_diff[global_sample_label[i]] = sampled_weight_diff[i]
+
+    x_diff = test_global_storage.Get("x_diff")
+    print("x_diff", x_diff[x_diff != 0])
+    print("np_weight_diff", np_weight_diff[np_weight_diff != 0])
 
     assert np.array_equal(test_global_storage.Get("x_diff"), np_weight_diff) == True
 
@@ -156,7 +154,7 @@ class TestPartialFc(flow.unittest.TestCase):
         arg_dict["num_classes"] = [85744]
         arg_dict["device_num_sample"] = [8600]
         arg_dict["batch_size"] = [512]
-        arg_dict["indexed_slice_update"] = [True, False]
+        arg_dict["indexed_slice_update"] = [False]
         for arg in GenArgList(arg_dict):
             compare_with_np(*arg)
 
