@@ -57,7 +57,7 @@ REGISTER_USER_OP("partial_fc_sample")
           .Split(user_op::OpArg("weight", 0), 0)
           .Broadcast(user_op::OpArg("label", 0))
           .PartialSum(user_op::OpArg("maped_label", 0))
-          .Broadcast(user_op::OpArg("sampled_label", 0))
+          .Split(user_op::OpArg("sampled_label", 0), 0)
           .Split(user_op::OpArg("sampled_weight", 0), 0)
           .Build();
       return Maybe<void>::Ok();
@@ -65,20 +65,27 @@ REGISTER_USER_OP("partial_fc_sample")
 
 REGISTER_USER_OP("partial_fc_sample_grad")
     .Input("sampled_weight_diff")
-    .Output("out")
+    .Input("sampled_label")
+    .Output("sampled_weight_diff_out")
+    .Output("sampled_label_out")
     .SetTensorDescInferFn([](user_op::InferContext* ctx) -> Maybe<void> {
-      *ctx->TensorDesc4ArgNameAndIndex("out", 0) =
+      *ctx->TensorDesc4ArgNameAndIndex("sampled_weight_diff_out", 0) =
           *ctx->TensorDesc4ArgNameAndIndex("sampled_weight_diff", 0);
+      *ctx->TensorDesc4ArgNameAndIndex("sampled_label_out", 0) =
+          *ctx->TensorDesc4ArgNameAndIndex("sampled_label", 0);
       return Maybe<void>::Ok();
     })
     .SetBatchAxisInferFn([](user_op::BatchAxisContext* ctx) -> Maybe<void> {
-      ctx->BatchAxis4ArgNameAndIndex("out", 0)->clear_value();
+      ctx->BatchAxis4ArgNameAndIndex("sampled_weight_diff_out", 0)->clear_value();
+      ctx->BatchAxis4ArgNameAndIndex("sampled_label_out", 0)->clear_value();
       return Maybe<void>::Ok();
     })
     .SetGetSbpFn([](user_op::SbpContext* ctx) -> Maybe<void> {
       ctx->NewBuilder()
           .Split(user_op::OpArg("sampled_weight_diff", 0), 0)
-          .Broadcast(user_op::OpArg("out", 0))
+          .Split(user_op::OpArg("sampled_label", 0), 0)
+          .Broadcast(user_op::OpArg("sampled_weight_diff_out", 0))
+          .Broadcast(user_op::OpArg("sampled_label_out", 0))
           .Build();
       return Maybe<void>::Ok();
     });
@@ -89,21 +96,25 @@ REGISTER_USER_OP_GRAD("partial_fc_sample")
       ctx->DefineOp(partial_fc_grad_op_name, [&ctx](user_op::BackwardOpBuilder& builder) {
         return builder.OpTypeName("partial_fc_sample_grad")
             .InputBind("sampled_weight_diff", ctx->FwOp().output_grad("sampled_weight", 0))
-            .Output("out")
+            .InputBind("sampled_label", ctx->FwOp().output("sampled_label", 0))
+            .Output("sampled_weight_diff_out")
+            .Output("sampled_label_out")
             .Build();
       });
       const auto unsorted_segment_sum_op_name =
           ctx->FwOp().op_name() + "_unsorted_segment_sum_grad";
-      ctx->DefineOp(unsorted_segment_sum_op_name,
-                    [&ctx, &partial_fc_grad_op_name](user_op::BackwardOpBuilder& builder) {
-                      return builder.OpTypeName("unsorted_segment_sum_like")
-                          .InputBind("data", ctx->GetOp(partial_fc_grad_op_name).output("out", 0))
-                          .InputBind("segment_ids", ctx->FwOp().output("sampled_label", 0))
-                          .InputBind("like", ctx->FwOp().input("weight", 0))
-                          .Output("out")
-                          .Attr("axis", static_cast<int64_t>(0))
-                          .Build();
-                    });
+      ctx->DefineOp(unsorted_segment_sum_op_name, [&ctx, &partial_fc_grad_op_name](
+                                                      user_op::BackwardOpBuilder& builder) {
+        return builder.OpTypeName("unsorted_segment_sum_like")
+            .InputBind("data",
+                       ctx->GetOp(partial_fc_grad_op_name).output("sampled_weight_diff_out", 0))
+            .InputBind("segment_ids",
+                       ctx->GetOp(partial_fc_grad_op_name).output("sampled_label_out", 0))
+            .InputBind("like", ctx->FwOp().input("weight", 0))
+            .Output("out")
+            .Attr("axis", static_cast<int64_t>(0))
+            .Build();
+      });
       ctx->FwOp().InputGradBind(user_op::OpArg("weight", 0),
                                 [&ctx, &unsorted_segment_sum_op_name]() -> const std::string& {
                                   return ctx->GetOp(unsorted_segment_sum_op_name).output("out", 0);

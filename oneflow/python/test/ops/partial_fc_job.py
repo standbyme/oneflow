@@ -51,10 +51,7 @@ def PartialFcJob(
         labels = labels.with_distribute(flow.distribute.broadcast())
         if partial_fc:
             maped_label, sampled_label, sampled_weight = flow.partial_fc_sample(
-                weight=fc7_weight,
-                label=labels,
-                num_sample=num_sample,
-                indexed_slice_update=indexed_slice_update,
+                weight=fc7_weight, label=labels, num_sample=num_sample,
             )
             maped_label = maped_label.with_distribute(flow.distribute.broadcast())
             labels = maped_label
