@@ -21,9 +21,9 @@ import time
 flow.config.gpu_device_num(4)
 func_config = flow.FunctionConfig()
 func_config.default_data_type(flow.float)
-func_config.indexed_slices_optimizer_conf(
-    dict(include_op_names=dict(op_name=["fc7-weight"]))
-)
+# func_config.indexed_slices_optimizer_conf(
+#    dict(include_op_names=dict(op_name=["fc7-weight"]))
+# )
 num_classes = 1000000
 emb_size = 128
 batch_size = 256
@@ -59,7 +59,7 @@ def PartialFcJob(
         data = flow.parallel_cast(data, distribute=flow.distribute.broadcast())
         fc7 = flow.matmul(a=data, b=fc7_weight, transpose_b=True)
         loss = flow.nn.sparse_softmax_cross_entropy_with_logits(
-            labels, fc7, name="softmax_loss"
+            labels, fc7.with_distribute(flow.distribute.split(1)), name="softmax_loss"
         )
         flow.optimizer.SGD(
             flow.optimizer.PiecewiseConstantScheduler([], [1e-4]), momentum=0
@@ -75,7 +75,9 @@ data = np.random.rand(batch_size, emb_size).astype(np.float32)
 check_point = flow.train.CheckPoint()
 check_point.init()
 start_time = time.time()
-for i in range(200):
+for i in range(300):
+    if i == 100:
+        start_time = time.time()
     loss = PartialFcJob(data, labels).get()
 time = time.time() - start_time
 print("time", time)

@@ -59,7 +59,7 @@ class TmpBufferManager final {
     label_buffer_offset_ = 0;
     index_buffer_offset_ = label_buffer_offset_ + label_buffer_bytes;
     sorted_label_buffer_offset_ = index_buffer_offset_ + index_buffer_bytes;
-    sorted_index_buffer_offset_ = sorted_label_buffer_offset_ + sorted_label_buffer_offset_;
+    sorted_index_buffer_offset_ = sorted_label_buffer_offset_ + sorted_label_buffer_bytes;
     rand_value_offset_ = sorted_index_buffer_offset_ + sorted_index_buffer_bytes;
     cub_tmp_storage_offset_ = rand_value_offset_ + rand_value_bytes;
     total_buffer_size_ = label_buffer_bytes + index_buffer_bytes + sorted_label_buffer_bytes
