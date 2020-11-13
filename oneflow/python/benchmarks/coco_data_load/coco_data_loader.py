@@ -58,6 +58,7 @@ def coco_data_load(cfg, machine_id, nrank):
             batch_size=cfg.batch_size,
             shuffle=cfg.shuffle_after_epoch,
             stride_partition=cfg.stride_partition,
+            name="coco_reader",
         )
         # image decode
         image = flow.image.decode(image, dtype=flow.float)
@@ -104,6 +105,7 @@ def coco_data_load(cfg, machine_id, nrank):
 
 def _make_data_load_fn():
     flow.clear_default_session()
+    flow.config.enable_debug_mode(True)
     func_config = flow.FunctionConfig()
     func_config.default_data_type(flow.float)
     func_config.default_distribute_strategy(flow.scope.consistent_view())
@@ -151,4 +153,4 @@ def _benchmark(iter_num, drop_first_iters, verbose=False):
 
 
 if __name__ == "__main__":
-    _benchmark(500, 10)
+    _benchmark(500, 10, True)
