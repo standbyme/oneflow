@@ -15,6 +15,7 @@ limitations under the License.
 """
 from __future__ import absolute_import
 from typing import Callable, Optional, Union, Tuple, Sequence
+import math
 from oneflow.python.oneflow_export import oneflow_export
 
 import oneflow as flow
@@ -24,6 +25,58 @@ import oneflow.python.framework.remote_blob as remote_blob_util
 
 IntPair = Tuple[int, int]
 
+@oneflow_export("layers.GraphConvolution")
+def GraphConvolution(
+        inputs: remote_blob_util.BlobDef,
+        adj_cooRowInd: remote_blob_util.BlobDef,
+        adj_cooColInd: remote_blob_util.BlobDef,
+        adj_cooValues: remote_blob_util.BlobDef,
+        adj_rows: int,
+        adj_cols: int,
+        in_features: int,
+        out_features: int,
+        use_bias=True,
+        kernel_initializer: Optional[op_conf_util.InitializerConf] = None,
+        bias_initializer: Optional[op_conf_util.InitializerConf] = None,
+        trainable: bool = True,
+        name: str = "GraphConvolution",
+) -> remote_blob_util.BlobDef:
+    with flow.scope.namespace(name):
+        if kernel_initializer is None:
+            stdv = 1. / math.sqrt(out_features)
+            kernel_initializer = flow.random_uniform_initializer(-stdv, stdv)
+
+        weight = flow.get_variable(
+            name="weight",
+            shape=(in_features, out_features),
+            dtype=inputs.dtype,
+            initializer=kernel_initializer,
+            trainable=trainable,
+            model_name="weight",
+            reuse=False,
+        )
+
+        # support = flow.matmul(a=inputs, b=weight, name="matmul")
+        # out = flow.spmm_coo(adj_cooRowInd, adj_cooColInd, adj_cooValues, adj_rows, adj_cols, support)
+
+        support = flow.spmm_coo(adj_cooRowInd, adj_cooColInd, adj_cooValues, adj_rows, adj_cols, inputs)
+        out = flow.matmul(a=support, b=weight, name="matmul")
+
+        if use_bias:
+            if bias_initializer is None:
+                bias_initializer = flow.random_uniform_initializer(-stdv, stdv)
+
+            bias = flow.get_variable(
+                name="bias",
+                shape=(out_features,),
+                dtype=inputs.dtype,
+                initializer=bias_initializer,
+                trainable=trainable,
+                model_name="bias",
+                reuse=False,
+            )
+            out = flow.nn.bias_add(out, bias, name="bias_add")
+    return out
 
 @oneflow_export("layers.dense")
 def dense(
