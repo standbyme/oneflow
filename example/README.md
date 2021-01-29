@@ -16,4 +16,7 @@ oneflow/python/ops/linalg.py
 oneflow/python/ops/layers.py: 33 GraphConvolution
 
 # Example
-example/gcn.py
+```
+cd example
+python3 example/gcn.py
+```
