@@ -44,8 +44,8 @@ class SpmmCSRGpuFloatKernel final : public user_op::OpKernel {
 
     user_op::Tensor *out_tensor = ctx->Tensor4ArgNameAndIndex("out", 0);
 
-    const int64_t *a_csrRowOffsets_ptr = a_csrRowOffsets->dptr<int64_t>();
-    const int64_t *a_csrColInd_ptr = a_csrColInd->dptr<int64_t>();
+    const int32_t *a_csrRowOffsets_ptr = a_csrRowOffsets->dptr<int32_t>();
+    const int32_t *a_csrColInd_ptr = a_csrColInd->dptr<int32_t>();
     const float *a_csrValues_ptr = a_csrValues->dptr<float>();
     const float *b_ptr = b->dptr<float>();
 
@@ -60,25 +60,25 @@ class SpmmCSRGpuFloatKernel final : public user_op::OpKernel {
     int B_size = B_num_rows * B_num_cols;
     int C_size = A_num_rows * B_num_cols;
 
-    const int64_t *hA_csrOffsets = a_csrRowOffsets_ptr;
-    const int64_t *hA_columns = a_csrColInd_ptr;
+    const int32_t *hA_csrOffsets = a_csrRowOffsets_ptr;
+    const int32_t *hA_columns = a_csrColInd_ptr;
     const float *hA_values = a_csrValues_ptr;
     const float *hB = b_ptr;
     float alpha = 1.0f;
     float beta = 0.0f;
     //--------------------------------------------------------------------------
     // Device memory management
-    int64_t *dA_csrOffsets, *dA_columns;
+    int32_t *dA_csrOffsets, *dA_columns;
     float *dA_values, *dB, *dC;
-    OF_CUDA_CHECK(cudaMalloc((void **)&dA_csrOffsets, (A_num_rows + 1) * sizeof(int64_t)));
-    OF_CUDA_CHECK(cudaMalloc((void **)&dA_columns, A_nnz * sizeof(int64_t)));
+    OF_CUDA_CHECK(cudaMalloc((void **)&dA_csrOffsets, (A_num_rows + 1) * sizeof(int32_t)));
+    OF_CUDA_CHECK(cudaMalloc((void **)&dA_columns, A_nnz * sizeof(int32_t)));
     OF_CUDA_CHECK(cudaMalloc((void **)&dA_values, A_nnz * sizeof(float)));
     OF_CUDA_CHECK(cudaMalloc((void **)&dB, B_size * sizeof(float)));
     OF_CUDA_CHECK(cudaMalloc((void **)&dC, C_size * sizeof(float)));
 
-    OF_CUDA_CHECK(cudaMemcpy(dA_csrOffsets, hA_csrOffsets, (A_num_rows + 1) * sizeof(int64_t), cudaMemcpyHostToDevice));
+    OF_CUDA_CHECK(cudaMemcpy(dA_csrOffsets, hA_csrOffsets, (A_num_rows + 1) * sizeof(int32_t), cudaMemcpyHostToDevice));
     OF_CUDA_CHECK(
-        cudaMemcpy(dA_columns, hA_columns, A_nnz * sizeof(int64_t), cudaMemcpyHostToDevice));
+        cudaMemcpy(dA_columns, hA_columns, A_nnz * sizeof(int32_t), cudaMemcpyHostToDevice));
     OF_CUDA_CHECK(cudaMemcpy(dA_values, hA_values, A_nnz * sizeof(float), cudaMemcpyHostToDevice));
     OF_CUDA_CHECK(cudaMemcpy(dB, hB, B_size * sizeof(float), cudaMemcpyHostToDevice));
     //--------------------------------------------------------------------------
@@ -91,7 +91,7 @@ class SpmmCSRGpuFloatKernel final : public user_op::OpKernel {
     CHECK_CUSPARSE(cusparseCreate(&handle))
     // Create sparse matrix A in CSR format
     CHECK_CUSPARSE(cusparseCreateCsr(&matA, A_num_rows, A_num_cols, A_nnz, dA_csrOffsets, dA_columns,
-                                     dA_values, CUSPARSE_INDEX_64I, CUSPARSE_INDEX_64I, CUSPARSE_INDEX_BASE_ZERO,
+                                     dA_values, CUSPARSE_INDEX_32I, CUSPARSE_INDEX_32I, CUSPARSE_INDEX_BASE_ZERO,
                                      CUDA_R_32F))
     // Create dense matrix B
     CHECK_CUSPARSE(
