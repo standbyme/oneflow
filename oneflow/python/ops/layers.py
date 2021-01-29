@@ -30,10 +30,10 @@ IntPair = Tuple[int, int]
 
 @oneflow_export("layers.GraphConvolution")
 def GraphConvolution(
-        inputs: remote_blob_util.BlobDef,
-        adj_cooRowInd: remote_blob_util.BlobDef,
-        adj_cooColInd: remote_blob_util.BlobDef,
-        adj_cooValues: remote_blob_util.BlobDef,
+        inputs: oneflow_api.BlobDesc,
+        adj_cooRowInd: oneflow_api.BlobDesc,
+        adj_cooColInd: oneflow_api.BlobDesc,
+        adj_cooValues: oneflow_api.BlobDesc,
         adj_rows: int,
         adj_cols: int,
         in_features: int,
@@ -43,7 +43,7 @@ def GraphConvolution(
         bias_initializer: Optional[op_conf_util.InitializerConf] = None,
         trainable: bool = True,
         name: str = "GraphConvolution",
-) -> remote_blob_util.BlobDef:
+) -> oneflow_api.BlobDesc:
     with flow.scope.namespace(name):
         if kernel_initializer is None:
             stdv = 1. / math.sqrt(out_features)
