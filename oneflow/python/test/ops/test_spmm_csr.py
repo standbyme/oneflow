@@ -26,8 +26,8 @@ def GenerateTest(
 ):
     @flow.global_function()
     def SpmmCSRJob(
-        a_csrRowOffsets: tp.Numpy.Placeholder((5,), dtype=flow.int64),
-        a_csrColInd: tp.Numpy.Placeholder((9,), dtype=flow.int64),
+        a_csrRowOffsets: tp.Numpy.Placeholder((5,), dtype=flow.int32),
+        a_csrColInd: tp.Numpy.Placeholder((9,), dtype=flow.int32),
         a_csrValues: tp.Numpy.Placeholder((9,), dtype=flow.float32),
         b: tp.Numpy.Placeholder((4, 3), dtype=flow.float32),
     ) -> tp.Numpy:
@@ -49,8 +49,8 @@ def GenerateTest(
 @flow.unittest.skip_unless_1n1d()
 class TestSpmmCSR(flow.unittest.TestCase):
     def test_naive(test_case):
-        a_csrRowOffsets = np.array([0, 3, 4, 7, 9], dtype=np.int64)
-        a_csrColInd = np.array([0, 2, 3, 1, 0, 2, 3, 1, 3], dtype=np.int64)
+        a_csrRowOffsets = np.array([0, 3, 4, 7, 9], dtype=np.int32)
+        a_csrColInd = np.array([0, 2, 3, 1, 0, 2, 3, 1, 3], dtype=np.int32)
         a_csrValues = np.array(
             [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0], dtype=np.float32
         )

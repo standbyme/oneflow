@@ -138,16 +138,16 @@ def spmm_coo(
         a_cols = 4
 
         @flow.global_function()
-        def MyJob(a_cooRowInd: tp.Numpy.Placeholder((9,), dtype=flow.int64),
-                  a_cooColInd: tp.Numpy.Placeholder((9,), dtype=flow.int64),
+        def MyJob(a_cooRowInd: tp.Numpy.Placeholder((9,), dtype=flow.int32),
+                  a_cooColInd: tp.Numpy.Placeholder((9,), dtype=flow.int32),
                   a_cooValues: tp.Numpy.Placeholder((9,), dtype=flow.float32),
                   b: tp.Numpy.Placeholder((4, 3), dtype=flow.float32),) -> tp.Numpy:
             with flow.scope.placement("gpu", "0:0"):
                 return flow.spmm_coo(a_cooRowInd, a_cooColInd, a_cooValues, a_rows, a_cols, b)
 
 
-        a_cooRowInd = np.array([0, 0, 0, 1, 2, 2, 2, 3, 3], dtype=np.int64)
-        a_cooColInd = np.array([0, 2, 3, 1, 0, 2, 3, 1, 3], dtype=np.int64)
+        a_cooRowInd = np.array([0, 0, 0, 1, 2, 2, 2, 3, 3], dtype=np.int32)
+        a_cooColInd = np.array([0, 2, 3, 1, 0, 2, 3, 1, 3], dtype=np.int32)
         a_cooValues = np.array([1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0], dtype=np.float32)
         b = np.array([[1.0, 5.0, 9.0], [2.0, 6.0, 10.0], [3.0, 7.0, 11.0], [4.0, 8.0, 12.0]], dtype=np.float32)
 
@@ -165,6 +165,64 @@ def spmm_coo(
         .Input("a_cooRowInd", [a_cooRowInd])
         .Input("a_cooColInd", [a_cooColInd])
         .Input("a_cooValues", [a_cooValues])
+        .Input("b", [b])
+        .Output("out")
+        .Attr("a_rows", a_rows)
+        .Attr("a_cols", a_cols)
+        .Build()
+    )
+    return op.InferAndTryRun().SoleOutputBlob()
+
+
+@oneflow_export("spmm_csr")
+def spmm_csr(
+    a_csrRowOffsets: oneflow_api.BlobDesc,
+    a_csrColInd: oneflow_api.BlobDesc,
+    a_csrValues: oneflow_api.BlobDesc,
+    a_rows: int,
+    a_cols: int,
+    b: oneflow_api.BlobDesc,
+) -> oneflow_api.BlobDesc:
+    r"""This operator applies CSR sparse matrix multiplication to two Blobs.
+    Args:
+        a_csrRowOffsets (oneflow_api.BlobDesc): Row offsets of the sparse matrix. Array of size rows + 1
+        a_csrColInd (oneflow_api.BlobDesc): Column indices of the sparse matrix.
+        a_csrValues (oneflow_api.BlobDesc): Values of the sparse matrix.
+        a_rows (int): Number of rows of the sparse matrix
+        a_cols (int): Number of columns of the sparse matrix
+        b (oneflow_api.BlobDesc): A Blob
+    Returns:
+        oneflow_api.BlobDesc: The result Blob
+    For example:
+    .. code-block:: python
+        import oneflow as flow
+        import numpy as np
+        import oneflow.typing as tp
+        a_rows = 4
+        a_cols = 4
+        @flow.global_function()
+        def MyJob(a_csrRowOffsets: tp.Numpy.Placeholder((5,), dtype=flow.int32),
+                  a_csrColInd: tp.Numpy.Placeholder((9,), dtype=flow.int32),
+                  a_csrValues: tp.Numpy.Placeholder((9,), dtype=flow.float32),
+                  b: tp.Numpy.Placeholder((4, 3), dtype=flow.float32),) -> tp.Numpy:
+            with flow.scope.placement("gpu", "0:0"):
+                return flow.spmm_csr(a_csrRowOffsets, a_csrColInd, a_csrValues, a_rows, a_cols, b)
+        a_csrRowOffsets = np.array([0, 3, 4, 7, 9], dtype=np.int32)
+        a_csrColInd = np.array([0, 2, 3, 1, 0, 2, 3, 1, 3], dtype=np.int32)
+        a_csrValues = np.array([1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0], dtype=np.float32)
+        b = np.array([[1.0, 5.0, 9.0], [2.0, 6.0, 10.0], [3.0, 7.0, 11.0], [4.0, 8.0, 12.0]], dtype=np.float32)
+        output = MyJob(a_csrRowOffsets, a_csrColInd, a_csrValues, b)
+        # output [[ 19.  43.  67.]
+        #         [  8.  24.  40.]
+        #         [ 51. 123. 195.]
+        #         [ 52. 120. 188.]]
+    """
+    op = (
+        flow.user_op_builder("op_spmm_csr")
+        .Op("spmm_csr")
+        .Input("a_csrRowOffsets", [a_csrRowOffsets])
+        .Input("a_csrColInd", [a_csrColInd])
+        .Input("a_csrValues", [a_csrValues])
         .Input("b", [b])
         .Output("out")
         .Attr("a_rows", a_rows)
