@@ -39,8 +39,8 @@ def GraphConvolution(
         in_features: int,
         out_features: int,
         use_bias=True,
-        kernel_initializer: Optional[op_conf_util.InitializerConf] = None,
-        bias_initializer: Optional[op_conf_util.InitializerConf] = None,
+        kernel_initializer: Optional[initializer_conf_util.InitializerConf] = None,
+        bias_initializer: Optional[initializer_conf_util.InitializerConf] = None,
         trainable: bool = True,
         name: str = "GraphConvolution",
 ) -> oneflow_api.BlobDesc:
