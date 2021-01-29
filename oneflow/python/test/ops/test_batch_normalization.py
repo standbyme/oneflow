@@ -49,10 +49,10 @@ def CompareNnBnWithTensorFlow(
     epsilon,
     input_minval=-10,
     input_maxval=10,
-    y_rtol=1e-5,
-    y_atol=1e-5,
-    x_diff_rtol=1e-5,
-    x_diff_atol=1e-5,
+    y_rtol=1e-4,
+    y_atol=1e-4,
+    x_diff_rtol=1e-4,
+    x_diff_atol=1e-4,
 ):
     flow.clear_default_session()
     func_config = flow.FunctionConfig()
@@ -286,10 +286,10 @@ def CompareBnWithTensorFlow(
     op_args=None,
     input_minval=-10,
     input_maxval=10,
-    y_rtol=5e-3,
-    y_atol=5e-3,
-    x_diff_rtol=5e-3,
-    x_diff_atol=5e-3,
+    y_rtol=1e-2,
+    y_atol=1e-2,
+    x_diff_rtol=1e-2,
+    x_diff_atol=1e-2,
     training=True,
     trainable=True,
 ):
