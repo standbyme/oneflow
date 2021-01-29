@@ -28,25 +28,26 @@ import oneflow_api
 
 IntPair = Tuple[int, int]
 
+
 @oneflow_export("layers.GraphConvolution")
 def GraphConvolution(
-        inputs: oneflow_api.BlobDesc,
-        adj_cooRowInd: oneflow_api.BlobDesc,
-        adj_cooColInd: oneflow_api.BlobDesc,
-        adj_cooValues: oneflow_api.BlobDesc,
-        adj_rows: int,
-        adj_cols: int,
-        in_features: int,
-        out_features: int,
-        use_bias=True,
-        kernel_initializer: Optional[initializer_conf_util.InitializerConf] = None,
-        bias_initializer: Optional[initializer_conf_util.InitializerConf] = None,
-        trainable: bool = True,
-        name: str = "GraphConvolution",
+    inputs: oneflow_api.BlobDesc,
+    adj_cooRowInd: oneflow_api.BlobDesc,
+    adj_cooColInd: oneflow_api.BlobDesc,
+    adj_cooValues: oneflow_api.BlobDesc,
+    adj_rows: int,
+    adj_cols: int,
+    in_features: int,
+    out_features: int,
+    use_bias=True,
+    kernel_initializer: Optional[initializer_conf_util.InitializerConf] = None,
+    bias_initializer: Optional[initializer_conf_util.InitializerConf] = None,
+    trainable: bool = True,
+    name: str = "GraphConvolution",
 ) -> oneflow_api.BlobDesc:
     with flow.scope.namespace(name):
         if kernel_initializer is None:
-            stdv = 1. / math.sqrt(out_features)
+            stdv = 1.0 / math.sqrt(out_features)
             kernel_initializer = flow.random_uniform_initializer(-stdv, stdv)
 
         weight = flow.get_variable(
@@ -62,7 +63,9 @@ def GraphConvolution(
         # support = flow.matmul(a=inputs, b=weight, name="matmul")
         # out = flow.spmm_coo(adj_cooRowInd, adj_cooColInd, adj_cooValues, adj_rows, adj_cols, support)
 
-        support = flow.spmm_coo(adj_cooRowInd, adj_cooColInd, adj_cooValues, adj_rows, adj_cols, inputs)
+        support = flow.spmm_coo(
+            adj_cooRowInd, adj_cooColInd, adj_cooValues, adj_rows, adj_cols, inputs
+        )
         out = flow.matmul(a=support, b=weight, name="matmul")
 
         if use_bias:
@@ -80,6 +83,7 @@ def GraphConvolution(
             )
             out = flow.nn.bias_add(out, bias, name="bias_add")
     return out
+
 
 @oneflow_export("layers.dense")
 def dense(

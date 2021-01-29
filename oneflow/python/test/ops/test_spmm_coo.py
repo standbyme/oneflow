@@ -41,6 +41,7 @@ def GenerateTest(test_case, a_cooRowInd, a_cooColInd, a_cooValues, a_rows, a_col
     )
     test_case.assertTrue(np.array_equal(y, x))
 
+
 @flow.unittest.skip_unless_1n1d()
 class TestSpmmCOO(flow.unittest.TestCase):
     def test_naive(test_case):

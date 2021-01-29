@@ -38,9 +38,7 @@ def GenerateTest(
 
     y = SpmmCSRJob(a_csrRowOffsets, a_csrColInd, a_csrValues, b)
     x = (
-        csr_matrix(
-            (a_csrValues, a_csrColInd, a_csrRowOffsets), shape=(a_rows, a_cols)
-        )
+        csr_matrix((a_csrValues, a_csrColInd, a_csrRowOffsets), shape=(a_rows, a_cols))
         * b
     )
     test_case.assertTrue(np.array_equal(y, x))

@@ -76,7 +76,8 @@ class SpmmCSRGpuFloatKernel final : public user_op::OpKernel {
     OF_CUDA_CHECK(cudaMalloc((void **)&dB, B_size * sizeof(float)));
     OF_CUDA_CHECK(cudaMalloc((void **)&dC, C_size * sizeof(float)));
 
-    OF_CUDA_CHECK(cudaMemcpy(dA_csrOffsets, hA_csrOffsets, (A_num_rows + 1) * sizeof(int32_t), cudaMemcpyHostToDevice));
+    OF_CUDA_CHECK(cudaMemcpy(dA_csrOffsets, hA_csrOffsets, (A_num_rows + 1) * sizeof(int32_t),
+                             cudaMemcpyHostToDevice));
     OF_CUDA_CHECK(
         cudaMemcpy(dA_columns, hA_columns, A_nnz * sizeof(int32_t), cudaMemcpyHostToDevice));
     OF_CUDA_CHECK(cudaMemcpy(dA_values, hA_values, A_nnz * sizeof(float), cudaMemcpyHostToDevice));
@@ -90,9 +91,9 @@ class SpmmCSRGpuFloatKernel final : public user_op::OpKernel {
     size_t bufferSize = 0;
     CHECK_CUSPARSE(cusparseCreate(&handle))
     // Create sparse matrix A in CSR format
-    CHECK_CUSPARSE(cusparseCreateCsr(&matA, A_num_rows, A_num_cols, A_nnz, dA_csrOffsets, dA_columns,
-                                     dA_values, CUSPARSE_INDEX_32I, CUSPARSE_INDEX_32I, CUSPARSE_INDEX_BASE_ZERO,
-                                     CUDA_R_32F))
+    CHECK_CUSPARSE(cusparseCreateCsr(&matA, A_num_rows, A_num_cols, A_nnz, dA_csrOffsets,
+                                     dA_columns, dA_values, CUSPARSE_INDEX_32I, CUSPARSE_INDEX_32I,
+                                     CUSPARSE_INDEX_BASE_ZERO, CUDA_R_32F))
     // Create dense matrix B
     CHECK_CUSPARSE(
         cusparseCreateDnMat(&matB, B_num_rows, B_num_cols, ldb, dB, CUDA_R_32F, CUSPARSE_ORDER_ROW))

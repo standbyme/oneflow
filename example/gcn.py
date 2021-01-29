@@ -18,18 +18,20 @@ TRAIN_NUM = len(idx_train)
 
 @flow.global_function(type="train")
 def train_job(
-        x: tp.Numpy.Placeholder((BATCH_SIZE, FEATURE_DIM), dtype=flow.float32),  # noqa
-        cooRowInd: tp.Numpy.Placeholder((EDGE_NUM,), dtype=flow.int32),  # noqa
-        cooColInd: tp.Numpy.Placeholder((EDGE_NUM,), dtype=flow.int32),  # noqa
-        cooValues: tp.Numpy.Placeholder((EDGE_NUM,), dtype=flow.float32),  # noqa
-        train_indices: tp.Numpy.Placeholder((TRAIN_NUM,), dtype=flow.int32),  # noqa
-        train_labels: tp.Numpy.Placeholder((TRAIN_NUM,), dtype=flow.int32),  # noqa
+    x: tp.Numpy.Placeholder((BATCH_SIZE, FEATURE_DIM), dtype=flow.float32),  # noqa
+    cooRowInd: tp.Numpy.Placeholder((EDGE_NUM,), dtype=flow.int32),  # noqa
+    cooColInd: tp.Numpy.Placeholder((EDGE_NUM,), dtype=flow.int32),  # noqa
+    cooValues: tp.Numpy.Placeholder((EDGE_NUM,), dtype=flow.float32),  # noqa
+    train_indices: tp.Numpy.Placeholder((TRAIN_NUM,), dtype=flow.int32),  # noqa
+    train_labels: tp.Numpy.Placeholder((TRAIN_NUM,), dtype=flow.int32),  # noqa
 ) -> tp.Numpy:
     with flow.scope.placement("gpu", "0:0"):
         """conv1 = GCNConv(dataset.num_node_features, 16)
         x = self.conv1(x, edge_index)
         x = F.relu(x)"""
-        x = flow.layers.GraphConvolution(x, cooRowInd, cooColInd, cooValues, rows, cols, FEATURE_DIM, HIDDEN_SIZE)
+        x = flow.layers.GraphConvolution(
+            x, cooRowInd, cooColInd, cooValues, rows, cols, FEATURE_DIM, HIDDEN_SIZE
+        )
         # x = flow.layers.dense(x, HIDDEN_SIZE, activation=flow.nn.relu, name="fc1",
         #                       kernel_initializer=flow.random_uniform_initializer())
 
@@ -39,8 +41,13 @@ def train_job(
         """self.conv2 = GCNConv(16, num_classes)
         x = self.conv2(x, edge_index)"""
         # x = flow.layers.GraphConvolution(x, cooRowInd, cooColInd, cooValues, rows, cols, HIDDEN_SIZE, num_classes)
-        x = flow.layers.dense(x, num_classes, activation=flow.nn.relu, name="fc2",
-                              kernel_initializer=flow.random_uniform_initializer())
+        x = flow.layers.dense(
+            x,
+            num_classes,
+            activation=flow.nn.relu,
+            name="fc2",
+            kernel_initializer=flow.random_uniform_initializer(),
+        )
 
         """return F.log_softmax(x, dim=1)
         loss = F.nll_loss(out[data.train_mask], data.y[data.train_mask])
@@ -61,5 +68,7 @@ if __name__ == "__main__":
     train_labels = labels[idx_train]
 
     for epoch in range(50):
-        loss = train_job(features, cooRowInd, cooColInd, cooValues, train_indices, train_labels)
-        print('Epoch [{}/{}], Loss: {:.4f}'.format(epoch + 1, 50, loss.mean()))
+        loss = train_job(
+            features, cooRowInd, cooColInd, cooValues, train_indices, train_labels
+        )
+        print("Epoch [{}/{}], Loss: {:.4f}".format(epoch + 1, 50, loss.mean()))
