@@ -24,8 +24,8 @@ from scipy.sparse import coo_matrix
 def GenerateTest(test_case, a_cooRowInd, a_cooColInd, a_cooValues, a_rows, a_cols, b):
     @flow.global_function()
     def SpmmCOOJob(
-        a_cooRowInd: tp.Numpy.Placeholder((9,), dtype=flow.int64),
-        a_cooColInd: tp.Numpy.Placeholder((9,), dtype=flow.int64),
+        a_cooRowInd: tp.Numpy.Placeholder((9,), dtype=flow.int32),
+        a_cooColInd: tp.Numpy.Placeholder((9,), dtype=flow.int32),
         a_cooValues: tp.Numpy.Placeholder((9,), dtype=flow.float32),
         b: tp.Numpy.Placeholder((4, 3), dtype=flow.float32),
     ) -> tp.Numpy:
@@ -44,8 +44,8 @@ def GenerateTest(test_case, a_cooRowInd, a_cooColInd, a_cooValues, a_rows, a_col
 @flow.unittest.skip_unless_1n1d()
 class TestSpmmCOO(flow.unittest.TestCase):
     def test_naive(test_case):
-        a_cooRowInd = np.array([0, 0, 0, 1, 2, 2, 2, 3, 3], dtype=np.int64)
-        a_cooColInd = np.array([0, 2, 3, 1, 0, 2, 3, 1, 3], dtype=np.int64)
+        a_cooRowInd = np.array([0, 0, 0, 1, 2, 2, 2, 3, 3], dtype=np.int32)
+        a_cooColInd = np.array([0, 2, 3, 1, 0, 2, 3, 1, 3], dtype=np.int32)
         a_cooValues = np.array(
             [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0], dtype=np.float32
         )
